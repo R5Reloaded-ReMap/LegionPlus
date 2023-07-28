@@ -78,13 +78,14 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
 
 		while (std::getline(ss, file, ','))
 		{
-			// Convertir std::string en string
 			string customString(file.c_str());
 			files.Add(customString);
 		}
 
-		//LegionMain main;
-		//main.LoadApexFile(files);
+		LegionMain* main = new LegionMain();
+		main->LoadApexFile(files);
+		
+		//ShowGUI = false;
 	}
 
 	if (cmdline.HasParam(L"--export") || cmdline.HasParam(L"--list"))
