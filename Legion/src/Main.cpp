@@ -66,6 +66,27 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
 		}
 	}
 
+	if (cmdline.HasParam(L"--loadPaks"))
+	{
+		std::wstring paksParam = cmdline.GetParamValue(L"--loadPaks");
+
+		std::string paksParamStr(paksParam.begin(), paksParam.end());
+
+		std::stringstream ss(paksParamStr);
+		std::string file;
+		List<string> files;
+
+		while (std::getline(ss, file, ','))
+		{
+			// Convertir std::string en string
+			string customString(file.c_str());
+			files.Add(customString);
+		}
+
+		//LegionMain main;
+		//main.LoadApexFile(files);
+	}
+
 	if (cmdline.HasParam(L"--export") || cmdline.HasParam(L"--list"))
 	{
 		string filePath;
