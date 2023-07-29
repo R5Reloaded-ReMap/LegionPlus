@@ -66,34 +66,16 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
 		}
 	}
 
-	if (cmdline.HasParam(L"--loadPaks"))
+	if (cmdline.HasParam(L"--export") || cmdline.HasParam(L"--list") || cmdline.HasParam(L"--loadPaks"))
 	{
-		std::wstring paksParam = cmdline.GetParamValue(L"--loadPaks");
-
-		std::string paksParamStr(paksParam.begin(), paksParam.end());
-
-		std::stringstream ss(paksParamStr);
-		std::string file;
-		List<string> files;
-
-		while (std::getline(ss, file, ','))
-		{
-			string customString(file.c_str());
-			files.Add(customString);
-		}
-
-		LegionMain* main = new LegionMain();
-		main->LoadApexFile(files);
-		
-		//ShowGUI = false;
-	}
-
-	if (cmdline.HasParam(L"--export") || cmdline.HasParam(L"--list"))
-	{
-		string filePath;
+		string filePath; List<string> filesPath;
 
 		bool bExportFile = cmdline.HasParam(L"--export");
 		bool bExportList = cmdline.HasParam(L"--list");
+		bool bExportSingleFile = cmdline.HasParam(L"--loadPaks") && cmdline.HasParam(L"--assetName");
+
+		//Launch Args
+		//LegionPlus.exe --loadPaks "C:\Program Files (x86)\Steam\steamapps\common\Apex Legends\paks\Win64\mp_lobby.rpak,C:\Program Files (x86)\Steam\steamapps\common\Apex Legends\paks\Win64\mp_lobby(01).rpak" --assetName "bar_godrays"
 
 		if (bExportFile)
 		{
@@ -103,6 +85,10 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
 		{
 			filePath = wstring(cmdline.GetParamValue(L"--list")).ToString();
 		}
+		else if (bExportSingleFile)
+		{
+			filePath = wstring(cmdline.GetParamValue(L"--loadPaks")).ToString();
+		}
 
 		// handle cli stuff
 		if (!string::IsNullOrEmpty(filePath))
@@ -110,7 +96,17 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
 			auto Rpak = std::make_unique<RpakLib>();
 			auto ExportAssets = List<ExportAsset>();
 
-			Rpak->LoadRpak(filePath);
+			if (bExportSingleFile)
+			{
+				filesPath = filePath.Split(',');
+
+				Rpak->LoadRpaks(filesPath);
+			}
+			else
+			{
+				Rpak->LoadRpak(filePath);
+			}
+			
 			Rpak->PatchAssets();
 
 			// other rpak flags
@@ -381,6 +377,42 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
 				else if (!filePath.EndsWith(".rpak" || ".mbnk")) {
 					g_Logger.Info("You loaded a file extension that isn't supported, the --list flag only supports .rpak and .mbnk file extensions");
 				}
+			}
+			else if (bExportSingleFile)
+			{
+				string assetName = wstring(cmdline.GetParamValue(L"--assetName")).ToString();
+
+				// Define the asset types to be loaded
+				std::array<bool, 11> bAssets = {
+					ExportManager::Config.GetBool("LoadModels"),
+					ExportManager::Config.GetBool("LoadAnimations"),
+					ExportManager::Config.GetBool("LoadAnimationSeqs"),
+					ExportManager::Config.GetBool("LoadImages"),
+					ExportManager::Config.GetBool("LoadMaterials"),
+					ExportManager::Config.GetBool("LoadUIImages"),
+					ExportManager::Config.GetBool("LoadDataTables"),
+					ExportManager::Config.GetBool("LoadShaderSets"),
+					ExportManager::Config.GetBool("LoadSettingsSets"),
+					ExportManager::Config.GetBool("LoadRSONs"),
+					ExportManager::Config.GetBool("LoadEffects")
+				};
+
+				AssetList = Rpak->BuildAssetList(bAssets);
+
+				List<ExportAsset> ExportAssets;
+
+				for (auto& Asset : *AssetList.get())
+				{
+					if (Asset.Name == assetName) // We only want to export the asset with a specific name
+					{
+						ExportAsset EAsset;
+						EAsset.AssetHash = Asset.Hash;
+						EAsset.AssetIndex = 0;
+						ExportAssets.EmplaceBack(EAsset);
+					}
+				}
+
+				ExportManager::ExportRpakAssets(Rpak, ExportAssets, [](uint32_t i, Forms::Form*, bool) {}, [](int32_t i, Forms::Form*) -> bool { return false; }, nullptr);
 			}
 
 			ShowGUI = false;
