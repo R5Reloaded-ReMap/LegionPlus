@@ -68,11 +68,11 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
 
 	if (cmdline.HasParam(L"--export") || cmdline.HasParam(L"--list") || cmdline.HasParam(L"--loadPaks"))
 	{
-		string filePath; List<string> filesPath;
+		string filePath; List<string> filesPath; List<string> assetList;
 
 		bool bExportFile = cmdline.HasParam(L"--export");
 		bool bExportList = cmdline.HasParam(L"--list");
-		bool bExportSingleFile = cmdline.HasParam(L"--loadPaks") && cmdline.HasParam(L"--assetName");
+		bool bExportSingleFile = cmdline.HasParam(L"--loadPaks") && cmdline.HasParam(L"--assetsToExport");
 
 		if (bExportFile)
 		{
@@ -96,6 +96,7 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
 			if (bExportSingleFile)
 			{
 				filesPath = filePath.Split(',');
+				assetList = wstring(cmdline.GetParamValue(L"--assetsToExport")).ToString().Split(',');
 
 				Rpak->LoadRpaks(filesPath);
 			}
@@ -377,13 +378,11 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
 			}
 			else if (bExportSingleFile)
 			{
-				string assetName = wstring(cmdline.GetParamValue(L"--assetName")).ToString();
-
 				List<ExportAsset> ExportAssets;
 
 				for (auto& Asset : *AssetList.get())
 				{
-					if (Asset.Name == assetName) // We only want to export the asset with a specific name
+					if (assetList.Contains(Asset.Name)) // We only want to export assets with a specific name
 					{
 						ExportAsset EAsset;
 						EAsset.AssetHash = Asset.Hash;
