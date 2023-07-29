@@ -74,9 +74,6 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
 		bool bExportList = cmdline.HasParam(L"--list");
 		bool bExportSingleFile = cmdline.HasParam(L"--loadPaks") && cmdline.HasParam(L"--assetName");
 
-		//Launch Args
-		//LegionPlus.exe --loadPaks "C:\Program Files (x86)\Steam\steamapps\common\Apex Legends\paks\Win64\mp_lobby.rpak,C:\Program Files (x86)\Steam\steamapps\common\Apex Legends\paks\Win64\mp_lobby(01).rpak" --assetName "bar_godrays"
-
 		if (bExportFile)
 		{
 			filePath = wstring(cmdline.GetParamValue(L"--export")).ToString();
@@ -381,23 +378,6 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
 			else if (bExportSingleFile)
 			{
 				string assetName = wstring(cmdline.GetParamValue(L"--assetName")).ToString();
-
-				// Define the asset types to be loaded
-				std::array<bool, 11> bAssets = {
-					ExportManager::Config.GetBool("LoadModels"),
-					ExportManager::Config.GetBool("LoadAnimations"),
-					ExportManager::Config.GetBool("LoadAnimationSeqs"),
-					ExportManager::Config.GetBool("LoadImages"),
-					ExportManager::Config.GetBool("LoadMaterials"),
-					ExportManager::Config.GetBool("LoadUIImages"),
-					ExportManager::Config.GetBool("LoadDataTables"),
-					ExportManager::Config.GetBool("LoadShaderSets"),
-					ExportManager::Config.GetBool("LoadSettingsSets"),
-					ExportManager::Config.GetBool("LoadRSONs"),
-					ExportManager::Config.GetBool("LoadEffects")
-				};
-
-				AssetList = Rpak->BuildAssetList(bAssets);
 
 				List<ExportAsset> ExportAssets;
 
