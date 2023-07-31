@@ -68,11 +68,11 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
 
 	if (cmdline.HasParam(L"--export") || cmdline.HasParam(L"--list") || cmdline.HasParam(L"--loadPaks"))
 	{
-		string filePath; List<string> filesPath; List<string> assetList;
+		string filePath;
 
 		bool bExportFile = cmdline.HasParam(L"--export");
 		bool bExportList = cmdline.HasParam(L"--list");
-		bool bExportSingleFile = cmdline.HasParam(L"--loadPaks") && cmdline.HasParam(L"--assetsToExport");
+		bool bExportDeclaredFile = cmdline.HasParam(L"--loadPaks") && cmdline.HasParam(L"--assetsToExport");
 
 		if (bExportFile)
 		{
@@ -82,7 +82,7 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
 		{
 			filePath = wstring(cmdline.GetParamValue(L"--list")).ToString();
 		}
-		else if (bExportSingleFile)
+		else if (bExportDeclaredFile)
 		{
 			filePath = wstring(cmdline.GetParamValue(L"--loadPaks")).ToString();
 		}
@@ -93,12 +93,28 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
 			auto Rpak = std::make_unique<RpakLib>();
 			auto ExportAssets = List<ExportAsset>();
 
-			if (bExportSingleFile)
+			if (bExportDeclaredFile)
 			{
-				filesPath = filePath.Split(',');
-				assetList = wstring(cmdline.GetParamValue(L"--assetsToExport")).ToString().Split(',');
+				List<string> arg = filePath.Split("=>");
 
-				Rpak->LoadRpaks(filesPath);
+				if (arg.Count() != 2)
+				{
+					g_Logger.Warning("Invalid argument format for --loadPaks. Expected format is \"rpakPathFolder=>fileName0.rpak,fileName1.rpak,...\"");
+					return 0;
+				}
+
+				string folderPath = arg[0];
+				List<string> fileNames = arg[1].Split(',');
+
+				List<string> filePaths;
+
+				for (string& fileName : fileNames)
+				{
+					string filePath = IO::Path::Combine(folderPath, fileName);
+					filePaths.EmplaceBack(filePath);
+				}
+
+				Rpak->LoadRpaks(filePaths);
 			}
 			else
 			{
@@ -376,9 +392,9 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
 					g_Logger.Info("You loaded a file extension that isn't supported, the --list flag only supports .rpak and .mbnk file extensions");
 				}
 			}
-			else if (bExportSingleFile)
+			else if (bExportDeclaredFile)
 			{
-				List<ExportAsset> ExportAssets;
+				List<ExportAsset> ExportAssets; List <string> assetList = wstring(cmdline.GetParamValue(L"--assetsToExport")).ToString().Split(',');
 
 				for (auto& Asset : *AssetList.get())
 				{
